@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 find_package(Boost 1.67.0 COMPONENTS filesystem program_options)
 
 set(SOURCE_FILES
-        main.cpp)
+        main.cpp ClassFileReader.h ClassFileReader.cpp)
 
 if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
