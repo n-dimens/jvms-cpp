@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     cout << "MAGIC: 0x" << hex << cf.magic.value << endl
          << "VERSION: " << dec << cf.majorVersion.value << "." << cf.minorVersion.value << endl;
 
+
     return 0;
 }
 
