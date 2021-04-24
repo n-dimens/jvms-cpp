@@ -141,11 +141,79 @@ ClassFile *read(std::istream &input) {
 
     u2 interfacesCount = read_u2(input);
     vector<ClassInfo *> interfaces(interfacesCount.value);
-    for (auto & interface : interfaces) {
+    for (auto &interface : interfaces) {
         interface = new ClassInfo();
         read_u2(input, interface->nameIndex);
     }
     result->interfaces = interfaces;
+
+    u2 fieldsCount = read_u2(input);
+    vector<Field *> fields(fieldsCount.value);
+    for (auto &field : fields) {
+        field = new Field();
+        read_u2(input, field->accessFlags);
+        read_u2(input, field->nameIndex);
+        read_u2(input, field->descriptorIndex);
+        u2 attributesCount = read_u2(input);
+        vector<Attribute *> attributes(attributesCount.value);
+        for (auto &attribute : attributes) {
+            attribute = new Attribute();
+            read_u2(input, attribute->nameIndex);
+            read_u4(input, attribute->length);
+            for (int i = 0; i < attribute->length.value; i++) {
+                attribute->info.push_back(read_u1(input));
+            }
+        }
+        field->attributes = attributes;
+    }
+    result->fields = fields;
+
+    u2 methodsCount = read_u2(input);
+    vector<Method *> methods(methodsCount.value);
+    for (auto &method : methods) {
+        method = new Method();
+        read_u2(input, method->accessFlags);
+        read_u2(input, method->nameIndex);
+        read_u2(input, method->descriptorIndex);
+        u2 attributesCount = read_u2(input);
+        vector<Attribute *> attributes(attributesCount.value);
+        for (auto &attribute : attributes) {
+            attribute = new Attribute();
+            read_u2(input, attribute->nameIndex);
+            read_u4(input, attribute->length);
+            for (int i = 0; i < attribute->length.value; i++) {
+                attribute->info.push_back(read_u1(input));
+            }
+        }
+        method->attributes = attributes;
+    }
+    result->methods = methods;
+
+    u2 attributesCount = read_u2(input);
+    vector<Attribute *> attributes(attributesCount.value);
+    for (auto &attribute : attributes) {
+        attribute = new Attribute();
+        read_u2(input, attribute->nameIndex);
+        read_u4(input, attribute->length);
+        for (int i = 0; i < attribute->length.value; i++) {
+            attribute->info.push_back(read_u1(input));
+        }
+    }
+    result->attributes = attributes;
+
+    input.peek();
+    if (!input.eof()) {
+        cout << "[ERROR] No end.\n";
+        while (!input.eof()) {
+            int last = read_u1(input).value;
+            cout << ":" << last;
+        }
+        cout << endl;
+        cout << "=======================\n";
+    } else {
+        cout << "SUCCESS\n";
+        cout << "=======================\n";
+    }
 
     return result;
 }
@@ -192,8 +260,35 @@ void reverse(T *bytes, int size) {
 }
 
 ClassFile::~ClassFile() {
-    cout << "Destruct class file.\n";
     for (auto &item : constantPool) {
         delete item;
+    }
+
+    for (auto &interface : interfaces) {
+        delete interface;
+    }
+
+    for (auto &field : fields) {
+        delete field;
+    }
+
+    for (auto &method : methods) {
+        delete method;
+    }
+
+    for (auto &attribute : attributes) {
+        delete attribute;
+    }
+}
+
+Field::~Field() {
+    for (auto &attribute : attributes) {
+        delete attribute;
+    }
+}
+
+Method::~Method() {
+    for (auto &attribute : attributes) {
+        delete attribute;
     }
 }
