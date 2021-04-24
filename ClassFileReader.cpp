@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 
+#include "CommonTypes.h"
 #include "ClassFileReader.h"
 #include "ConstantPool.h"
 
@@ -12,22 +13,8 @@ u2 read_u2(istream &input);
 void read_u2(istream &input, u2 &field);
 void read_u4(istream &input, u4 &field);
 
-ClassFile read(std::istream &input) {
-    if (!input) {
-        cout << "Corrupted input stream";
-        return ClassFile{};
-    }
-
-    ClassFile result{};
-    read_u4(input, result.magic);
-    read_u2(input, result.minorVersion);
-    read_u2(input, result.majorVersion);
-
-    u2 constantPoolCount = read_u2(input);
-    cout << "CST SIZE: " << constantPoolCount.value << endl;
-
+vector<Constant *> &readConstantPool(std::istream &input, vector<Constant *> &constantPool) {
     int counter = 0;
-    vector<Constant *> constantPool(constantPoolCount.value - 1);
     while (counter < constantPool.size()) {
         auto tag = (ConstantPoolTag) read_u1(input).value;
         switch (tag) {
@@ -130,9 +117,35 @@ ClassFile read(std::istream &input) {
         counter++;
     }
 
-    for (auto &item : constantPool) {
-        delete item;
+    return constantPool;
+}
+
+ClassFile *read(std::istream &input) {
+    if (!input) {
+        cout << "Corrupted input stream";
+        return nullptr;
     }
+
+    auto result = new ClassFile();
+    read_u4(input, result->magic);
+    read_u2(input, result->minorVersion);
+    read_u2(input, result->majorVersion);
+
+    u2 constantPoolCount = read_u2(input);
+    vector<Constant *> constantPool(constantPoolCount.value - 1);
+    result->constantPool = readConstantPool(input, constantPool);
+
+    read_u2(input, result->accessFlags);
+    read_u2(input, result->thisClass);
+    read_u2(input, result->superClass);
+
+    u2 interfacesCount = read_u2(input);
+    vector<ClassInfo *> interfaces(interfacesCount.value);
+    for (auto & interface : interfaces) {
+        interface = new ClassInfo();
+        read_u2(input, interface->nameIndex);
+    }
+    result->interfaces = interfaces;
 
     return result;
 }
@@ -178,4 +191,9 @@ void reverse(T *bytes, int size) {
     }
 }
 
-
+ClassFile::~ClassFile() {
+    cout << "Destruct class file.\n";
+    for (auto &item : constantPool) {
+        delete item;
+    }
+}
